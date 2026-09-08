@@ -1,70 +1,107 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { randomInt } from 'crypto'
 
-function normalizePhone(raw: string): string {
-  const digits = raw.replace(/\D/g, '')
-  if (digits.length === 11 && (digits.startsWith('7') || digits.startsWith('8'))) {
-    return '+7' + digits.slice(1)
-  }
-  if (digits.length === 10) return '+7' + digits
-  return '+' + digits
+function normalizeEmail(raw: string): string {
+  return raw.trim().toLowerCase()
 }
 
-// Используем "авторизацию по звонку" SMS.ru вместо SMS-сообщения —
-// не требует регистрации буквенного имени отправителя (которая
-// доступна только юрлицам и занимает 3-7 дней). Пользователю звонят
-// с рандомного номера, последние 4 цифры этого номера — код.
-export async function POST(req: NextRequest) {
-  const { phone } = await req.json()
-  const normalized = normalizePhone(phone || '')
+function generateCode(): string {
+  return randomInt(100000, 1000000).toString()
+}
 
-  if (normalized.replace(/\D/g, '').length < 11) {
-    return NextResponse.json({ error: 'Введите корректный номер телефона' }, { status: 400 })
+export async function POST(req: NextRequest) {
+  const { email } = await req.json()
+  const normalized = normalizeEmail(email || '')
+
+  if (!normalized || !normalized.includes('@')) {
+    return NextResponse.json(
+      { error: 'Введите корректный email' },
+      { status: 400 }
+    )
   }
 
-  if (!process.env.SMSRU_API_ID) {
+  if (!process.env.BREVO_API_KEY) {
     return NextResponse.json(
-      { error: 'SMS.ru не настроен на сервере (нет SMSRU_API_ID)' },
+      { error: 'Не указан BREVO_API_KEY' },
       { status: 500 }
     )
   }
 
-  const phoneDigits = normalized.replace('+', '')
-  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1'
+  const code = generateCode()
+  const supabase = createAdminClient()
 
-  let code: string
-  try {
-    const callRes = await fetch('https://sms.ru/code/call', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        phone: phoneDigits,
-        ip: clientIp,
-        api_id: process.env.SMSRU_API_ID,
-      }),
+  const { error: dbError } = await supabase
+    .from('email_otp_codes')
+    .upsert({
+      email: normalized,
+      code,
+      expires_at: new Date(
+        Date.now() + 10 * 60 * 1000
+      ).toISOString(),
     })
-    const callData = await callRes.json()
 
-    if (callData.status !== 'OK' || !callData.code) {
+  if (dbError) {
+    return NextResponse.json(
+      { error: 'Ошибка базы данных: ' + dbError.message },
+      { status: 500 }
+    )
+  }
+
+  try {
+    const emailRes = await fetch(
+      'https://api.brevo.com/v3/smtp/email',
+      {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: 'ФСМО',
+            email: process.env.BREVO_FROM_EMAIL || 'ars2007dm@gmail.com',
+          },
+          to: [{ email: normalized }],
+          subject: 'Код подтверждения — ФСМО lite',
+          textContent: `Здравствуйте!
+
+Вас приветствует ФСМО | Фонд систематизированных методик образования.
+
+Благодарим за проявленный интерес к платформе FSMO lite.
+
+Ваш код подтверждения: ${code}
+
+Код действителен в течение 10 минут.
+
+Желаем комфортной подготовки и ждём Вас в нашей олимпиадной команде!
+
+С уважением,
+ФСМО | Фонд систематизированных методик образования`,
+        }),
+      }
+    )
+
+    if (!emailRes.ok) {
+      const text = await emailRes.text()
+
+      await supabase
+        .from('email_otp_codes')
+        .delete()
+        .eq('email', normalized)
+
       return NextResponse.json(
-        { error: 'Не удалось позвонить: ' + (callData.status_text || 'неизвестная ошибка') },
+        { error: 'Не удалось отправить письмо: ' + text },
         { status: 500 }
       )
     }
-    code = callData.code
+
+    return NextResponse.json({ ok: true })
   } catch (e: any) {
-    return NextResponse.json({ error: 'Ошибка соединения с SMS.ru: ' + e.message }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Ошибка отправки письма: ' + e.message },
+      { status: 500 }
+    )
   }
-
-  const supabase = createAdminClient()
-  const { error: dbError } = await supabase.from('phone_otp_codes').upsert({
-    phone: normalized,
-    code,
-    expires_at: new Date(Date.now() + 3 * 60 * 1000).toISOString(),
-  })
-  if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ ok: true })
 }

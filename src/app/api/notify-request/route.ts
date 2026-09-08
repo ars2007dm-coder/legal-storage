@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Отправляет письмо администратору о новой заявке на доступ через Resend.
-// Если RESEND_API_KEY или ADMIN_EMAIL не настроены — просто ничего не
+// Если Resend или ADMIN_EMAIL не настроены — просто ничего не
 // отправляет (не ломает заявку, админ всё равно увидит её в /admin/requests).
 
 export async function POST(req: NextRequest) {
   const { name, phone, grade } = await req.json()
 
-  if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) {
+  if (
+    !process.env.RESEND_API_KEY ||
+    !process.env.RESEND_FROM_EMAIL ||
+    !process.env.ADMIN_EMAIL
+  ) {
     return NextResponse.json({ skipped: true })
   }
 
@@ -19,7 +23,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ФСМО lite <onboarding@resend.dev>',
+        from: process.env.RESEND_FROM_EMAIL,
         to: [process.env.ADMIN_EMAIL],
         subject: 'Новая заявка на доступ — ФСМО lite',
         text: `Новая заявка на доступ.\n\nИмя: ${name}\nТелефон: ${phone}\nКласс: ${grade || 'не указан'}\n\nОдобрить: зайдите в /admin/requests`,

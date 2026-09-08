@@ -1,0 +1,4 @@
+.env.local
+.env.local.save
+*.bak
+tsconfig.tsbuildinfo
