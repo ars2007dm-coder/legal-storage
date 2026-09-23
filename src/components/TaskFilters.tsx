@@ -61,6 +61,26 @@ export default function TaskFilters() {
           ))}
         </select>
         <select
+          defaultValue={searchParams.get('grade') ?? ''}
+          onChange={(e) => update('grade', e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="">Все классы</option>
+          {[5, 6, 7, 8, 9, 10, 11].map((grade) => (
+            <option key={grade} value={grade}>{grade} класс</option>
+          ))}
+        </select>
+        <select
+          defaultValue={searchParams.get('year') ?? ''}
+          onChange={(e) => update('year', e.target.value)}
+          className="border rounded-lg px-3 py-2 text-sm"
+        >
+          <option value="">Все годы</option>
+          {[2025, 2024, 2023, 2022, 2021, 2020].map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+        <select
           defaultValue={searchParams.get('difficulty') ?? ''}
           onChange={(e) => update('difficulty', e.target.value)}
           className="border rounded-lg px-3 py-2 text-sm"
