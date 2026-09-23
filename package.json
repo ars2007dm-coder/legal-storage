@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "import:olimpiada": "node scripts/import-olimpiada-archive.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
