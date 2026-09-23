@@ -18,6 +18,8 @@ export default async function TasksPage({
   if (searchParams.category) query = query.eq('category', searchParams.category)
   if (searchParams.difficulty) query = query.eq('difficulty', searchParams.difficulty)
   if (searchParams.stage) query = query.eq('stage', searchParams.stage)
+  if (searchParams.grade) query = query.eq('grade', Number(searchParams.grade))
+  if (searchParams.year) query = query.eq('year', Number(searchParams.year))
 
   const { data: tasks, error } = await query
 
@@ -62,6 +64,7 @@ export default async function TasksPage({
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" /> {task.year ?? '—'}
                 </span>
+                {task.grade && <span>{task.grade} класс</span>}
                 <span className="flex items-center gap-1">
                   <BarChart3 className="w-3.5 h-3.5" /> {stageLabels[task.stage]?.label ?? task.stage}
                 </span>
