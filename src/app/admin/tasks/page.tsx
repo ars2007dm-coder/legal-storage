@@ -32,12 +32,16 @@ export default async function AdminTasksPage() {
             <input name="preview" required className={inputClass} />
           </div>
           <div className="sm:col-span-2">
-            <label className={labelClass}>Полный текст задачи</label>
+            <label className={labelClass}>Описание или примечание</label>
             <textarea name="full_text" required rows={5} className={inputClass} />
           </div>
           <div>
             <label className={labelClass}>Год</label>
             <input name="year" type="number" className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Класс</label>
+            <select name="grade" className={inputClass}><option value="">Не указан</option>{[5, 6, 7, 8, 9, 10, 11].map((grade) => <option key={grade} value={grade}>{grade} класс</option>)}</select>
           </div>
           <div>
             <label className={labelClass}>Этап</label>
@@ -57,6 +61,23 @@ export default async function AdminTasksPage() {
               {Object.entries(categoryLabels).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
             </select>
           </div>
+          <div>
+            <label className={labelClass}>Регион</label>
+            <input name="region" className={inputClass} placeholder="Например, Москва" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelClass}>Источник</label>
+            <input name="source_name" className={inputClass} placeholder="Олимпиада.ру / официальный организатор" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelClass}>Прямая ссылка на файл заданий</label>
+            <input name="source_url" type="url" className={inputClass} placeholder="https://…pdf" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelClass}>Прямая ссылка на ответы / критерии</label>
+            <input name="answers_url" type="url" className={inputClass} placeholder="https://…pdf" />
+          </div>
+          <label className="sm:col-span-2 flex items-center gap-2 text-sm text-gray-600"><input name="external_only" type="checkbox" defaultChecked /> Материалы открываются только на официальном сайте</label>
           <div className="sm:col-span-2">
             <button className="btn-gradient text-white text-sm font-medium px-4 py-2 rounded-lg">
               Добавить задачу
@@ -100,12 +121,16 @@ export default async function AdminTasksPage() {
                     <input name="preview" defaultValue={task.preview} required className={inputClass} />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className={labelClass}>Полный текст задачи</label>
+                    <label className={labelClass}>Описание или примечание</label>
                     <textarea name="full_text" defaultValue={task.full_text} required rows={5} className={inputClass} />
                   </div>
                   <div>
                     <label className={labelClass}>Год</label>
                     <input name="year" type="number" defaultValue={task.year ?? ''} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Класс</label>
+                    <select name="grade" defaultValue={task.grade ?? ''} className={inputClass}><option value="">Не указан</option>{[5, 6, 7, 8, 9, 10, 11].map((grade) => <option key={grade} value={grade}>{grade} класс</option>)}</select>
                   </div>
                   <div>
                     <label className={labelClass}>Этап</label>
@@ -125,6 +150,14 @@ export default async function AdminTasksPage() {
                       {Object.entries(categoryLabels).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                     </select>
                   </div>
+                  <div>
+                    <label className={labelClass}>Регион</label>
+                    <input name="region" defaultValue={task.region ?? ''} className={inputClass} />
+                  </div>
+                  <div className="sm:col-span-2"><label className={labelClass}>Источник</label><input name="source_name" defaultValue={task.source_name ?? ''} className={inputClass} /></div>
+                  <div className="sm:col-span-2"><label className={labelClass}>Прямая ссылка на файл заданий</label><input name="source_url" type="url" defaultValue={task.source_url ?? ''} className={inputClass} /></div>
+                  <div className="sm:col-span-2"><label className={labelClass}>Прямая ссылка на ответы / критерии</label><input name="answers_url" type="url" defaultValue={task.answers_url ?? ''} className={inputClass} /></div>
+                  <label className="sm:col-span-2 flex items-center gap-2 text-sm text-gray-600"><input name="external_only" type="checkbox" defaultChecked={task.external_only ?? false} /> Материалы открываются только на официальном сайте</label>
                   <div className="sm:col-span-2">
                     <button className="btn-gradient text-white text-sm font-medium px-4 py-2 rounded-lg">
                       Сохранить
