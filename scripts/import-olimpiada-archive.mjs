@@ -12,16 +12,19 @@
 import { createClient } from '@supabase/supabase-js'
 
 const source = 'https://olimpiada.ru'
-const years = [2020, 2021, 2022, 2023, 2024, 2025]
-const grades = [5, 6, 7, 8, 9, 10, 11]
+const yearArg = process.argv.find((arg) => /^--year=\d{4}$/.test(arg))
+const gradeArg = process.argv.find((arg) => /^--grade=\d{1,2}$/.test(arg))
+const collectOnly = process.argv.includes('--collect')
+const years = yearArg ? [Number(yearArg.split('=')[1])] : [2020, 2021, 2022, 2023, 2024, 2025]
+const grades = gradeArg ? [Number(gradeArg.split('=')[1])] : [5, 6, 7, 8, 9, 10, 11]
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl || !serviceKey) {
+if (!collectOnly && (!supabaseUrl || !serviceKey)) {
   throw new Error('Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before importing.')
 }
 
-const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
+const supabase = collectOnly ? null : createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
 
 const decode = (value) => value
   .replace(/&amp;/g, '&')
@@ -46,6 +49,35 @@ function stageAt(html, position) {
   return 'archive'
 }
 
+function regionFromUrl(url) {
+  const code = new URL(url).pathname.match(/-(?:sch|mun|prigl)-([a-z0-9]+)-\d{2}-\d{2}\.pdf$/i)?.[1]?.toLowerCase()
+  if (!code) return null
+  const names = {
+    amur: 'Амурская область', arh: 'Архангельская область', bash: 'Республика Башкортостан',
+    belgor: 'Белгородская область', bryansk: 'Брянская область', bur: 'Республика Бурятия',
+    buryat: 'Республика Бурятия', chel: 'Челябинская область', chuk: 'Чукотский автономный округ',
+    crimea: 'Республика Крым', dnr: 'Донецкая Народная Республика', irk: 'Иркутская область',
+    kalin: 'Тверская область', kalinin: 'Тверская область', kaliningrad: 'Калининградская область',
+    kalug: 'Калужская область', kaluga: 'Калужская область', kamchat: 'Камчатский край',
+    kamchatka: 'Камчатский край', kem: 'Кемеровская область', kirov: 'Кировская область',
+    komi: 'Республика Коми', kostroma: 'Костромская область', kryar: 'Красноярский край',
+    kurgan: 'Курганская область', kursk: 'Курская область', lenobl: 'Ленинградская область',
+    lip: 'Липецкая область', mosobl: 'Московская область', msk: 'Москва', murman: 'Мурманская область',
+    nn: 'Нижегородская область', novgorod: 'Новгородская область', novgorog: 'Новгородская область',
+    novosb: 'Новосибирская область', omsk: 'Омская область', orel: 'Орловская область',
+    orenb: 'Оренбургская область', orl: 'Орловская область', perm: 'Пермский край',
+    rostov: 'Ростовская область', ryazan: 'Рязанская область', saratov: 'Саратовская область',
+    sp: 'Санкт-Петербург', spb: 'Санкт-Петербург', stavr: 'Ставропольский край',
+    sverd: 'Свердловская область', sverdlobl: 'Свердловская область', sverdlov: 'Свердловская область',
+    tat: 'Республика Татарстан', tatar: 'Республика Татарстан', tula: 'Тульская область',
+    tum: 'Тюменская область', tver: 'Тверская область', tyumen: 'Тюменская область',
+    udmurt: 'Удмуртская Республика', vladimir: 'Владимирская область', volog: 'Вологодская область',
+    vologda: 'Вологодская область', xakas: 'Республика Хакасия', xmao: 'Ханты-Мансийский автономный округ',
+    yakut: 'Республика Саха (Якутия)', yamal: 'Ямало-Ненецкий автономный округ',
+  }
+  return names[code] || code.toUpperCase()
+}
+
 function extractPdfPairs(html, year, grade) {
   const anchors = [...html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)]
     .map((match) => ({ href: absoluteUrl(decode(match[1])), label: decode(match[2]).toLowerCase(), position: match.index }))
@@ -59,13 +91,15 @@ function extractPdfPairs(html, year, grade) {
     const next = anchors[i + 1]
     const answers = next && /(ответ|решени|критери)/.test(next.label) ? next.href : null
     const stage = stageAt(html, task.position)
+    const region = regionFromUrl(task.href)
     rows.push({
-      title: `ВсОШ по праву — ${grade} класс, ${stageLabel(stage)}, ${year}`,
+      title: `ВсОШ по праву — ${grade} класс, ${stageLabel(stage)}, ${year}${region ? ` — ${region}` : ''}`,
       preview: 'Официальный файл задания: открывается у первоисточника.',
       full_text: 'На ФСМО размещена карточка с прямой официальной ссылкой. Текст и файл задания не копируются.',
       year,
       grade,
       stage,
+      region,
       difficulty: 'medium',
       category: 'other',
       source_name: 'Олимпиада.ру / официальный организатор',
@@ -92,6 +126,7 @@ let found = 0
 let inserted = 0
 let skipped = 0
 const errors = []
+const collected = []
 
 for (const year of years) {
   for (const grade of grades) {
@@ -103,6 +138,11 @@ for (const year of years) {
       const rows = extractPdfPairs(await response.text(), year, grade)
       const uniqueRows = [...new Map(rows.map((row) => [row.source_url, row])).values()]
       found += uniqueRows.length
+      if (collectOnly) {
+        collected.push(...uniqueRows)
+        console.log(`${year}, grade ${grade}: ${uniqueRows.length} official task PDFs found`)
+        continue
+      }
       if (uniqueRows.length === 0) {
         console.log(`No direct PDF links: ${year}, grade ${grade}`)
         continue
@@ -122,6 +162,16 @@ for (const year of years) {
     }
     await new Promise((resolve) => setTimeout(resolve, 250))
   }
+}
+
+if (collectOnly) {
+  const byUrl = new Map()
+  for (const row of collected) if (!byUrl.has(row.source_url)) byUrl.set(row.source_url, row)
+  const uniqueRows = [...byUrl.values()]
+    .map(({ year, grade, stage, region, source_url, answers_url }) => ({ year, grade, stage, region, source_url, answers_url }))
+  console.log(JSON.stringify({ checked, found: uniqueRows.length, rows: uniqueRows, errors }))
+  if (errors.length) process.exitCode = 1
+  process.exit()
 }
 
 console.log(JSON.stringify({ checked, found, inserted, skipped, errors }, null, 2))
