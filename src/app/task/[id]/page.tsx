@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ExternalLink, PlayCircle, ArrowLeft } from 'lucide-react'
+import { ExternalLink, PlayCircle, ArrowLeft, FileText, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import FavoriteButton from '@/components/FavoriteButton'
 import { categoryLabels, difficultyLabels, stageLabels } from '@/lib/labels'
@@ -53,12 +53,28 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
               <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary-50 text-primary-700">
                 {stageLabels[task.stage]?.label ?? task.stage}{task.year ? ` · ${task.year}` : ''}
               </span>
+              {task.grade && <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600">{task.grade} класс</span>}
             </div>
             <FavoriteButton itemType="task" itemId={task.id} />
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-4">{task.title}</h1>
           <p className="text-gray-700 whitespace-pre-line leading-relaxed">{task.full_text}</p>
+
+          {(task.source_url || task.answers_url) && (
+            <div className="mt-6 rounded-xl border border-primary-100 bg-primary-50/40 p-4">
+              <p className="font-medium text-gray-900">Официальные материалы</p>
+              <p className="mt-1 text-sm text-gray-600">
+                Материалы открываются на сайте источника и не воспроизводятся на ФСМО.
+                {task.source_name ? ` Источник: ${task.source_name}.` : ''}
+                {task.region ? ` Регион: ${task.region}.` : ''}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {task.source_url && <a href={task.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline"><FileText className="w-4 h-4" /> Открыть задания <ExternalLink className="w-3.5 h-3.5" /></a>}
+                {task.answers_url && <a href={task.answers_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:underline"><CheckCircle2 className="w-4 h-4" /> Открыть ответы <ExternalLink className="w-3.5 h-3.5" /></a>}
+              </div>
+            </div>
+          )}
 
           {taskRefs && taskRefs.length > 0 && (
             <div className="mt-8 pt-6 border-t">
