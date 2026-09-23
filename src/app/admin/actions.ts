@@ -95,6 +95,12 @@ export async function createTask(formData: FormData) {
     stage: formData.get('stage'),
     difficulty: formData.get('difficulty'),
     category: formData.get('category'),
+    grade: formData.get('grade') ? Number(formData.get('grade')) : null,
+    region: formData.get('region') || null,
+    source_name: formData.get('source_name') || null,
+    source_url: formData.get('source_url') || null,
+    answers_url: formData.get('answers_url') || null,
+    external_only: formData.get('external_only') === 'on',
   })
   revalidatePath('/tasks')
   revalidatePath('/admin/tasks')
@@ -113,6 +119,12 @@ export async function updateTask(id: string, formData: FormData) {
       stage: formData.get('stage'),
       difficulty: formData.get('difficulty'),
       category: formData.get('category'),
+      grade: formData.get('grade') ? Number(formData.get('grade')) : null,
+      region: formData.get('region') || null,
+      source_name: formData.get('source_name') || null,
+      source_url: formData.get('source_url') || null,
+      answers_url: formData.get('answers_url') || null,
+      external_only: formData.get('external_only') === 'on',
     })
     .eq('id', id)
   revalidatePath('/tasks')
