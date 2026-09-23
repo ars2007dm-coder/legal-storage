@@ -11,7 +11,8 @@ export type Category =
   | 'family'
   | 'land'
   | 'business'
-export type Stage = 'school' | 'municipal' | 'regional' | 'final'
+  | 'other'
+export type Stage = 'school' | 'municipal' | 'regional' | 'final' | 'archive'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 export type BookType = 'textbook' | 'commentary' | 'casebook' | 'monograph' | 'article'
 
@@ -35,6 +36,12 @@ export interface Task {
   stage: Stage
   difficulty: Difficulty
   category: Category
+  grade: number | null
+  region: string | null
+  source_name: string | null
+  source_url: string | null
+  answers_url: string | null
+  external_only: boolean
   created_at: string
 }
 
