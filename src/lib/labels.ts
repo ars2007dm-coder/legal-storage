@@ -5,6 +5,7 @@ export const stageLabels: Record<string, { label: string }> = {
   municipal: { label: 'Муниципальный' },
   regional: { label: 'Региональный' },
   final: { label: 'Заключительный' },
+  archive: { label: 'Архив материалов' },
 }
 
 export const difficultyLabels: Record<string, { label: string; color: string }> = {
@@ -45,4 +46,5 @@ export const categoryLabels: Record<string, { label: string }> = {
   family: { label: 'Семейное право' },
   land: { label: 'Земельное право' },
   business: { label: 'Корпоративное право' },
+  other: { label: 'Общее право' },
 }
