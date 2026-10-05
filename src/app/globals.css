@@ -75,3 +75,21 @@ input:focus, select:focus, textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: #3a3a3a;
 }
+
+/* Glass confirmation dialog, keeping the existing six-digit email flow. */
+.fsmo-auth-backdrop { background: rgba(5, 7, 12, .72); backdrop-filter: blur(7px); animation: fsmo-fade-in .25s ease-out; }
+.fsmo-otp-glass { color: #fff; padding-top: 3.5rem; background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.055)); border: 1px solid rgba(255,255,255,.24); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 24px 90px rgba(0,0,0,.45); backdrop-filter: blur(24px); animation: fsmo-glass-in .45s cubic-bezier(.2,.8,.2,1) both; }
+.fsmo-otp-handle { position: absolute; top: 20px; left: calc(50% - 24px); width: 48px; height: 4px; border-radius: 99px; background: rgba(255,255,255,.3); }
+.fsmo-otp-field { position: relative; margin: 24px 0; }
+.fsmo-otp-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; z-index: 1; cursor: text; font-size: 16px; }
+.fsmo-otp-cells { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 8px; }
+.fsmo-otp-cell { display: flex; align-items: center; justify-content: center; height: 56px; border: 1px solid rgba(255,255,255,.23); border-radius: 12px; background: rgba(0,0,0,.25); color: rgba(255,255,255,.25); font-size: 24px; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.fsmo-otp-cell.is-filled { color: white; border-color: #ee8873; box-shadow: 0 0 12px rgba(238,136,115,.16); }
+.fsmo-otp-cell.is-filled span { animation: fsmo-digit-in .2s ease-out; }
+.fsmo-otp-field:focus-within .is-active { border-color: #ffab8b; box-shadow: 0 0 0 2px rgba(255,171,139,.16), 0 0 20px rgba(255,171,139,.18); transform: translateY(-2px); }
+.fsmo-otp-field:focus-within .fsmo-otp-cells { outline: 2px solid transparent; }
+.fsmo-otp-cell.has-error { border-color: #f87171; }
+@keyframes fsmo-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fsmo-glass-in { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes fsmo-digit-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .fsmo-auth-backdrop, .fsmo-otp-glass, .fsmo-otp-cell.is-filled span { animation: none; } .fsmo-otp-cell { transition: none; } }

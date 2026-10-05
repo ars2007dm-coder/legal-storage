@@ -129,11 +129,14 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 fsmo-auth-backdrop flex items-center justify-center p-4"
       onClick={close}
     >
       <div
-        className="bg-surface rounded-2xl w-full max-w-sm p-6 relative"
+        className={`rounded-2xl w-full max-w-sm p-6 relative ${step === 2 ? 'fsmo-otp-glass' : 'bg-surface'}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={step === 2 ? 'Подтверждение входа' : 'Вход по email'}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -194,39 +197,43 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
           </>
         ) : (
           <>
-            <h2 className="text-xl font-bold mb-4">
-              Подтверждение
+            <span className="fsmo-otp-handle" aria-hidden="true" />
+            <h2 className="text-xl font-bold mb-4 text-center">
+              Подтвердите вход
             </h2>
 
-            <p className="text-center text-sm text-gray-500 mb-3">
+            <p className="text-center text-sm text-white/60 mb-6">
               Мы отправили код на{' '}
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-white/90 break-all">
                 {email}
               </span>
             </p>
 
-            <input
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              autoFocus
-              value={code}
-              onChange={(e) =>
-                setCode(
-                  e.target.value
-                    .replace(/\D/g, '')
-                    .slice(0, 6)
-                )
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') verifyCode()
-              }}
-              className="w-full border rounded-lg px-4 py-3 mb-4 text-center text-2xl tracking-widest outline-none focus:ring-2 focus:ring-primary-300"
-              placeholder="000000"
-            />
+            <div className="fsmo-otp-field">
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label="Шестизначный код из письма"
+                maxLength={6}
+                autoFocus
+                disabled={loading}
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !loading) verifyCode() }}
+                className="fsmo-otp-input"
+              />
+              <div className="fsmo-otp-cells" aria-hidden="true">
+                {Array.from({ length: 6 }, (_, index) => (
+                  <span key={index} className={`fsmo-otp-cell ${code[index] ? 'is-filled' : ''} ${index === code.length ? 'is-active' : ''} ${error ? 'has-error' : ''}`}>
+                    <span key={code[index] || 'empty'}>{code[index] || '·'}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
 
             {error && (
-              <p className="text-red-400 text-sm mb-3 text-center">
+              <p className="text-red-300 text-sm mb-3 text-center">
                 {error}
               </p>
             )}
@@ -245,7 +252,7 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
                 setCode('')
                 setError('')
               }}
-              className="w-full text-sm text-gray-500 py-2"
+              className="w-full text-sm text-white/60 hover:text-white py-2"
             >
               Изменить email
             </button>
@@ -253,7 +260,7 @@ export default function AuthModal({ open, onClose }: { open: boolean; onClose: (
             <button
               onClick={sendCode}
               disabled={loading}
-              className="w-full text-sm text-primary-600 py-2 disabled:opacity-50"
+              className="w-full text-sm text-orange-300 hover:text-orange-200 py-2 disabled:opacity-50"
             >
               Отправить код ещё раз
             </button>
