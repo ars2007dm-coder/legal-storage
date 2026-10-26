@@ -2,16 +2,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createHomework, deleteHomework, updateHomeworkAssignment } from '../actions'
 import { normalizePhone } from '@/lib/normalizePhone'
 import ExpandableText from '@/components/ExpandableText'
-
-const inputClass =
-  'w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary-300'
-
-const labelClass = 'text-xs font-medium text-gray-500 mb-1 block'
+import { BookOpen, FolderOpen, MessageSquare, Plus, Users } from 'lucide-react'
+import { DeleteControls, SubmitButton } from '@/components/homework-admin/FormControls'
+import styles from './homework.module.css'
 
 export default async function AdminHomeworkPage() {
   const supabase = createAdminClient()
 
-  const [{ data: homework }, { data: submissions }, usersRes, { data: profiles }] =
+  const [{ data: homework, error: homeworkError }, { data: submissions, error: submissionsError }, usersRes, { data: profiles, error: profilesError }] =
     await Promise.all([
       supabase
         .from('homework')
@@ -71,291 +69,114 @@ export default async function AdminHomeworkPage() {
     return match?.label ?? phone
   }
 
+  const studentsUnavailable = Boolean(usersRes.error || profilesError)
+
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-10 space-y-8">
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <p className={styles.eyebrow}><BookOpen size={16} aria-hidden="true" /> Учебная мастерская</p>
+        <h1 className={styles.title}>Домашние задания</h1>
+        <p className={styles.subtitle}>Создавайте задания, назначайте их ученикам и просматривайте ответы с обратной связью.</p>
+      </header>
 
-      <h1 className="text-xl font-bold text-gray-900">
-        Домашние задания
-      </h1>
-
-      {/* СОЗДАНИЕ ДЗ */}
-      <section className="bg-surface rounded-xl border p-5">
-        <h2 className="font-semibold text-gray-900 mb-4">
-          Новое задание
-        </h2>
-
-        <form action={createHomework} className="space-y-3">
-
-          <div>
-            <label className={labelClass}>
-              Название
-            </label>
-
-            <input
-              name="title"
-              required
-              className={inputClass}
-            />
+      <div className={styles.workspace}>
+        <section className={styles.panel} aria-labelledby="create-heading">
+          <div className={styles.panelHeading}>
+            <span className={styles.icon}><Plus size={20} aria-hidden="true" /></span>
+            <div><h2 id="create-heading" className={styles.sectionTitle}>Новое задание</h2>
+              <p className={styles.hint}>От условия — к самостоятельному решению</p></div>
           </div>
-
-          <div>
-            <label className={labelClass}>
-              Условие / инструкция (видит ученик)
-            </label>
-
-            <textarea
-              name="instructions"
-              required
-              rows={3}
-              className={inputClass}
-            />
-          </div>
-
-          <div>
-            <label className={labelClass}>
-              Эталонный ответ / критерии для ИИ
-              (ученик НЕ видит, используется только для проверки)
-            </label>
-
-            <textarea
-              name="model_answer"
-              required
-              rows={4}
-              className={inputClass}
-            />
-          </div>
-
-          <div>
-            <label className={labelClass}>
-              Категория (необязательно)
-            </label>
-
-            <input
-              name="category"
-              className={inputClass}
-            />
-          </div>
-
-          <div>
-            <label className={labelClass}>
-              Кому назначить
-            </label>
-
-            <select
-              name="assigned_phone"
-              className={inputClass}
-              defaultValue=""
-            >
-              <option value="">
-                Всем ученикам
-              </option>
-
-              {students.map((s) => (
-                <option
-                  key={s.phone}
-                  value={s.phone}
-                >
-                  {s.label}
-                </option>
-              ))}
-            </select>
-
-            {students.length === 0 && (
-              <p className="text-xs text-gray-400 mt-1">
-                Пока никто не заполнил личный кабинет
-                (ФИО) — список появится, когда ученики это сделают.
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="btn-gradient text-white text-sm font-medium px-4 py-2 rounded-lg"
-          >
-            Добавить задание
-          </button>
-        </form>
-      </section>
-
-      {/* СПИСОК ДЗ */}
-      <section>
-        <h2 className="font-semibold text-gray-900 mb-3">
-          Список заданий
-        </h2>
-
-        <div className="space-y-2">
-
-          {homework?.map((hw) => (
-            <div
-              key={hw.id}
-              className="bg-surface rounded-xl border p-4"
-            >
-
-              <div className="flex items-start justify-between gap-4">
-
-                <div className="min-w-0 flex-1">
-
-                  <p className="font-medium text-gray-900">
-                    {hw.title}
-                  </p>
-
-                  {/* Полное условие с разворачиванием */}
-                  <div className="mt-1">
-                    <ExpandableText
-                      text={hw.instructions}
-                      buttonLabel="Развернуть условие"
-                    />
-                  </div>
-
-                  <span className="inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full bg-primary-50 text-primary-700">
-                    {hw.assigned_phone
-                      ? studentLabel(hw.assigned_phone)
-                      : 'Всем ученикам'}
-                  </span>
-
-                </div>
-
-                <form
-                  action={deleteHomework.bind(
-                    null,
-                    hw.id
-                  )}
-                >
-                  <button
-                    type="submit"
-                    className="text-sm text-red-600 hover:underline shrink-0"
-                  >
-                    Удалить
-                  </button>
-                </form>
-
-              </div>
-
-              {/* ПЕРЕНАЗНАЧЕНИЕ */}
-              <details className="mt-3">
-                <summary className="text-sm text-primary-600 cursor-pointer select-none">
-                  Переназначить
-                </summary>
-
-                <form
-                  action={updateHomeworkAssignment.bind(
-                    null,
-                    hw.id
-                  )}
-                  className="flex gap-2 mt-3"
-                >
-                  <select
-                    name="assigned_phone"
-                    defaultValue={
-                      hw.assigned_phone ?? ''
-                    }
-                    className={inputClass}
-                  >
-                    <option value="">
-                      Всем ученикам
-                    </option>
-
-                    {students.map((s) => (
-                      <option
-                        key={s.phone}
-                        value={s.phone}
-                      >
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-
-                  <button
-                    type="submit"
-                    className="btn-gradient text-white text-sm font-medium px-4 py-2 rounded-lg shrink-0"
-                  >
-                    Сохранить
-                  </button>
-                </form>
-              </details>
-
+          <form action={createHomework}>
+            <fieldset disabled={studentsUnavailable} className={styles.form}>
+            <div><label htmlFor="homework-title" className={styles.label}>Название</label>
+              <input id="homework-title" name="title" required className={styles.input} placeholder="Тема домашнего задания" /></div>
+            <div><label htmlFor="homework-instructions" className={styles.label}>Условие / инструкция</label>
+              <textarea id="homework-instructions" name="instructions" required rows={5} className={styles.input} aria-describedby="instructions-hint" />
+              <p id="instructions-hint" className={styles.hint}>Этот текст увидит ученик, когда откроет папку.</p></div>
+            <div className={styles.criteria}>
+              <label htmlFor="homework-model-answer" className={styles.label}>Эталонный ответ / критерии для ИИ</label>
+              <textarea id="homework-model-answer" name="model_answer" required rows={4} className={styles.input} aria-describedby="criteria-hint" />
+              <p id="criteria-hint" className={styles.hint}>Ученик не видит это поле. Критерии используются при проверке ответа.</p>
             </div>
-          ))}
-
-          {homework?.length === 0 && (
-            <p className="text-gray-400 text-sm">
-              Заданий пока нет
-            </p>
-          )}
-
-        </div>
-      </section>
-
-      {/* ОТВЕТЫ УЧЕНИКОВ */}
-      <section>
-
-        <h2 className="font-semibold text-gray-900 mb-3">
-          Последние ответы учеников
-        </h2>
-
-        <div className="space-y-2">
-
-          {submissions?.map((s) => (
-            <div
-              key={s.id}
-              className="bg-surface rounded-xl border p-4"
-            >
-
-              <div className="flex items-center justify-between mb-2">
-
-                <p className="text-sm font-medium text-gray-900">
-                  {s.phone}
-                </p>
-
-                {s.ai_score && (
-                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary-50 text-primary-700">
-                    {s.ai_score}
-                  </span>
-                )}
-
-              </div>
-
-              {/* ОТВЕТ УЧЕНИКА */}
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1">
-                  Ответ ученика
-                </p>
-
-                <ExpandableText
-                  text={s.answer_text}
-                  buttonLabel="Развернуть ответ"
-                />
-              </div>
-
-              {/* ПРОВЕРКА ИИ */}
-              {s.ai_feedback && (
-                <div className="mt-3 pt-3 border-t">
-
-                  <p className="text-xs font-semibold text-gray-500 mb-1">
-                    Проверка ИИ
-                  </p>
-
-                  <ExpandableText
-                    text={s.ai_feedback}
-                    buttonLabel="Развернуть комментарий"
-                  />
-
-                </div>
-              )}
-
+            <div><label htmlFor="homework-category" className={styles.label}>Категория <span className="text-gray-500">· необязательно</span></label>
+              <input id="homework-category" name="category" className={styles.input} /></div>
+            <div><label htmlFor="homework-assigned" className={styles.label}>Кому назначить</label>
+              <select id="homework-assigned" name="assigned_phone" defaultValue="" disabled={studentsUnavailable} className={styles.input} aria-describedby="students-hint">
+                <option value="">Всем ученикам</option>
+                {students.map((student) => <option key={student.phone} value={student.phone}>{student.label}</option>)}
+              </select>
+              <p id="students-hint" className={styles.hint}>{studentsUnavailable
+                ? 'Не удалось загрузить учеников. Обновите страницу, чтобы создать задание с правильным назначением.'
+                : students.length === 0 ? 'Пока нет учеников с заполненными ФИО и телефоном. Можно назначить задание всем.' : 'Выберите одного ученика или оставьте задание доступным всем.'}</p>
             </div>
-          ))}
+            {studentsUnavailable ? <p role="alert" className={styles.error}>Создание временно недоступно: список учеников не загружен.</p>
+              : <SubmitButton pendingLabel="Добавляем…" className={`${styles.button} btn-gradient`}>Добавить задание</SubmitButton>}
+            </fieldset>
+          </form>
+        </section>
 
-          {submissions?.length === 0 && (
-            <p className="text-gray-400 text-sm">
-              Ответов пока нет
-            </p>
-          )}
+        <section aria-labelledby="assignments-heading">
+          <div className={styles.panelHeading}>
+            <span className={styles.icon}><FolderOpen size={20} aria-hidden="true" /></span>
+            <div><h2 id="assignments-heading" className={styles.sectionTitle}>Список заданий</h2><p className={styles.hint}>Условия и назначения в одном месте</p></div>
+          </div>
+          <div className={styles.list}>
+            {homeworkError && <p role="alert" className={styles.error}>Не удалось загрузить задания. Обновите страницу, чтобы попробовать снова.</p>}
+            {homework?.map((hw) => (
+              <article key={hw.id} className={styles.card}>
+                <h3 className={styles.cardTitle}>{hw.title}</h3>
+                <ExpandableText text={hw.instructions} buttonLabel="Развернуть условие" />
+                <div className={styles.meta}>
+                  <span className={styles.badge}><Users size={13} aria-hidden="true" className="shrink-0" />{hw.assigned_phone ? studentLabel(hw.assigned_phone) : 'Всем ученикам'}</span>
+                  {hw.category && <span className={styles.badge}>{hw.category}</span>}
+                </div>
+                <details className={styles.assignment}>
+                  <summary>Переназначить</summary>
+                  <form action={updateHomeworkAssignment.bind(null, hw.id)} className={styles.assignmentForm}>
+                    <label htmlFor={`assignment-${hw.id}`} className={styles.label}>Кому назначить задание</label>
+                    <div className={styles.assignmentRow}>
+                      <select id={`assignment-${hw.id}`} name="assigned_phone" defaultValue={hw.assigned_phone ?? ''} disabled={studentsUnavailable} className={styles.input}>
+                        <option value="">Всем ученикам</option>
+                        {hw.assigned_phone && !students.some((student) => student.phone === hw.assigned_phone) && <option value={hw.assigned_phone}>{studentLabel(hw.assigned_phone)} · текущее назначение</option>}
+                        {students.map((student) => <option key={student.phone} value={student.phone}>{student.label}</option>)}
+                      </select>
+                      {!studentsUnavailable && <SubmitButton pendingLabel="Сохраняем…" className={`${styles.button} btn-gradient`}>Сохранить</SubmitButton>}
+                    </div>
+                    {studentsUnavailable && <p role="alert" className={styles.error}>Список учеников не загружен. Обновите страницу перед переназначением.</p>}
+                  </form>
+                </details>
+                <form action={deleteHomework.bind(null, hw.id)} className="mt-3"><DeleteControls title={hw.title} /></form>
+              </article>
+            ))}
+            {!homeworkError && homework?.length === 0 && <p className={styles.empty}>Заданий пока нет.<br />Создайте первое задание в форме рядом.</p>}
+          </div>
+        </section>
+      </div>
 
+      <section className={styles.answers} aria-labelledby="answers-heading">
+        <div className={styles.panelHeading}>
+          <span className={styles.icon}><MessageSquare size={20} aria-hidden="true" /></span>
+          <div><h2 id="answers-heading" className={styles.sectionTitle}>Последние ответы учеников</h2><p className={styles.hint}>До 30 последних ответов и комментарии ИИ</p></div>
         </div>
-
+        {submissionsError && <p role="alert" className={styles.error}>Не удалось загрузить ответы. Обновите страницу, чтобы попробовать снова.</p>}
+        <div className={styles.answerGrid}>
+          {submissions?.map((submission) => (
+            <article key={submission.id} className={styles.card}>
+              <div className={styles.answerHeader}>
+                <h3 className="text-sm font-medium text-gray-900">{submission.phone}</h3>
+                {submission.ai_score && <span className={styles.badge}>Оценка: {submission.ai_score}</span>}
+              </div>
+              <p className={styles.label}>Ответ ученика</p>
+              <ExpandableText text={submission.answer_text} buttonLabel="Развернуть ответ" />
+              {submission.ai_feedback && <div className={styles.feedback}>
+                <p className={styles.label}>Проверка ИИ</p>
+                <ExpandableText text={submission.ai_feedback} buttonLabel="Развернуть комментарий" />
+              </div>}
+            </article>
+          ))}
+        </div>
+        {!submissionsError && submissions?.length === 0 && <p className={styles.empty}>Ответов пока нет. Они появятся здесь, когда ученики отправят задания на проверку.</p>}
       </section>
-
     </div>
   )
 }

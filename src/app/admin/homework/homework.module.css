@@ -1,0 +1,44 @@
+.page { max-width: 1200px; margin: 0 auto; padding: 0 1rem 3rem; color: #f4f4f2; }
+.header { margin-bottom: 2rem; padding: 1.5rem 0; border-bottom: 1px solid #262626; }
+.eyebrow { display: flex; align-items: center; gap: .5rem; color: #e07a68; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; margin-bottom: .75rem; }
+.title { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 600; line-height: 1.15; }
+.subtitle { color: rgba(255,255,255,.65); margin-top: .75rem; max-width: 650px; line-height: 1.6; }
+.workspace { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 1.5rem; align-items: start; }
+.panel { min-width: 0; border: 1px solid #262626; border-radius: 1.25rem; background: #0f0f0f; padding: 1.5rem; animation: arrive .35s ease both; }
+.panelHeading { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.25rem; }
+.icon { display: grid; place-items: center; flex-shrink: 0; height: 2.5rem; width: 2.5rem; border-radius: .8rem; color: #e07a68; background: rgba(184,38,31,.12); border: 1px solid rgba(184,38,31,.2); }
+.sectionTitle { font-size: 1.1rem; font-weight: 600; }
+.hint { font-size: .8rem; line-height: 1.5; color: rgba(255,255,255,.6); margin-top: .3rem; }
+.form { display: grid; gap: 1rem; min-width: 0; min-inline-size: 0; }
+.workspace > section { min-width: 0; }
+.label { display: block; color: rgba(255,255,255,.85); font-size: .85rem; margin-bottom: .4rem; }
+.input { width: 100%; min-width: 0; border: 1px solid #333; border-radius: .7rem; padding: .7rem .85rem; font-size: .875rem; transition: border-color .18s, box-shadow .18s; }
+.input:focus-visible { border-color: #e07a68; box-shadow: 0 0 0 3px rgba(184,38,31,.2); outline: none; }
+.input:disabled { opacity: .5; cursor: not-allowed; }
+.criteria { border: 1px solid rgba(184,38,31,.2); padding: 1rem; border-radius: .85rem; background: rgba(184,38,31,.05); }
+.button { display: inline-flex; justify-content: center; align-items: center; gap: .5rem; border-radius: .7rem; padding: .7rem 1rem; font-size: .875rem; font-weight: 600; color: white; min-height: 44px; }
+.button:disabled { opacity: .6; cursor: wait; }
+.button:focus-visible, .assignment summary:focus-visible { outline: 2px solid #e07a68; outline-offset: 4px; }
+.list { display: grid; gap: 1rem; }
+.card { min-width: 0; border: 1px solid #262626; border-radius: 1rem; background: #0f0f0f; padding: 1.25rem; animation: arrive .35s ease both; transition: border-color .2s, box-shadow .2s; overflow-wrap: anywhere; }
+.card:hover { border-color: #4a3030; box-shadow: 0 8px 30px #0003; }
+.cardTitle { font-size: 1rem; font-weight: 600; margin-bottom: .6rem; }
+.badge { display: inline-flex; align-items: center; gap: .35rem; max-width: 100%; font-size: .75rem; border: 1px solid rgba(184,38,31,.2); border-radius: 999px; padding: .3rem .65rem; color: #e8a2a2; background: rgba(184,38,31,.12); overflow-wrap: anywhere; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 1rem 0; }
+.assignment { border-top: 1px solid #262626; padding-top: 1rem; }
+.assignment summary { color: #e07a68; cursor: pointer; width: fit-content; font-size: .875rem; border-radius: .25rem; }
+.assignment[open] form { animation: arrive .18s ease; }
+.assignmentForm { margin-top: .9rem; }
+.assignmentRow { display: flex; align-items: start; gap: .6rem; }
+.assignmentRow .input { flex: 1; }
+.assignmentRow .button { flex-shrink: 0; }
+.empty { padding: 2rem 1rem; border: 1px dashed #3a3a3a; border-radius: 1rem; color: rgba(255,255,255,.65); line-height: 1.6; text-align: center; }
+.error { border: 1px solid rgba(184,38,31,.35); border-radius: .75rem; padding: .9rem; color: #e8a2a2; background: rgba(184,38,31,.1); font-size: .875rem; }
+.answers { margin-top: 2.5rem; }
+.answerGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; align-items: start; }
+.answerHeader { display: flex; justify-content: space-between; align-items: start; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.feedback { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #262626; }
+@keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 800px) { .workspace, .answerGrid { grid-template-columns: 1fr; } .panel { padding: 1.1rem; } }
+@media (max-width: 440px) { .assignmentRow { flex-direction: column; } .assignmentRow .button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .page *, .page *::before, .page *::after { animation: none !important; transition: none !important; } .page button:active { transform: none; } }
